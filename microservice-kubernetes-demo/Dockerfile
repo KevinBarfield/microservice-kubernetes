@@ -1,4 +1,4 @@
-FROM maven:3-eclipse-temurin-11 as DEPS
+FROM maven:3.6-alpine as DEPS
 
 WORKDIR /opt/app
 COPY microservice-kubernetes-demo-catalog/pom.xml microservice-kubernetes-demo-catalog/pom.xml

@@ -122,7 +122,8 @@ echo $DOCKER_ACCOUNT
 3. If you are running on x86, run `docker-build.sh` in the directory
 `microservice-kubernetes-demo`. It builds the images and uploads them to Docker Hub using your account.
 
-3a. If you are running on arm64 (apple silicon), you will need to build images for arm64 and amd64 and push to hub using buildx.  Change to the directory `microservice-kubernetes-demo` and run `./docker-buildx.sh`
+3a. If you are running on arm64 (apple silicon), you will need to compile locally then build images and push to hub using buildx.  Change to the directory `microservice-kubernetes-demo` and run `./mvnw clean
+package`.  Once the compile is done, run ` ./docker-buildx.sh`
 
 ### Deploy to EKS
 Run `./kubernetes-deploy.sh` in the directory
