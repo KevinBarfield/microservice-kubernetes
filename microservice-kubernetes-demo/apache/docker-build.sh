@@ -3,7 +3,7 @@ if [ -z "$DOCKER_ACCOUNT" ]; then
     DOCKER_ACCOUNT=updateme
 fi;
 docker build --tag=microservice-kubernetes-demo-apache .
-docker tag microservice-kubernetes-demo-apache $DOCKER_ACCOUNT/microservice-kubernetes-demo-apache:latest
+#docker tag microservice-kubernetes-demo-apache $DOCKER_ACCOUNT/microservice-kubernetes-demo-apache:latest
 #docker push $DOCKER_ACCOUNT/microservice-kubernetes-demo-apache
 
 #docker build --tag=microservice-kubernetes-demo-catalog microservice-kubernetes-demo-catalog

@@ -75,7 +75,7 @@ class Order {
 	public double totalPrice(CatalogClient itemClient) {
 		return orderLine.stream()
 				.map((ol) -> ol.getCount() * itemClient.price(ol.getItemId()))
-				.reduce(0.0, (d1, d2) -> d1 + d2);
+				.reduce(0.00, (d1, d2) -> d1 + d2);
 	}
 
 	public void setCustomer(long customerId) {

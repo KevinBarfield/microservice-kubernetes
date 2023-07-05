@@ -1,0 +1,39 @@
+connection:
+  context: "arn:aws:eks:us-east-1:477715925773:cluster/demo-eks-tp"
+  mappedNamespaces:
+    - "default"
+workloads:
+  # You can define one or more workload(s)
+  - name: catalog
+    intercepts:
+      # You can define one or more intercept(s)
+      - headers: 
+        - name: x-intercept-id
+          value: ordertrackmulti
+        localPort: 8081
+        port: 8081
+        handler: catalog
+        service: catalog
+  - name: order
+    intercepts:
+      - headers: 
+        - name: x-intercept-id
+          value: ordertrackmulti
+        localPort: 8080
+        port: 8080
+        handler: order
+        service: order
+handlers:
+  - name: catalog
+    environment:
+      - name: PORT
+        value: "8081"
+    docker:
+      image: microservice-kubernetes-demo-catalog:latest
+  - name: order
+    environment:
+      - name: PORT
+        value: "8080"
+    docker:
+      image: microservice-kubernetes-demo-order:latest
+      

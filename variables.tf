@@ -15,12 +15,12 @@ variable "region" {
 # ...but also beware there might be a better way:
 # https://www.youtube.com/watch?v=IcJc3lDjFSk
 
-variable "AWS_ACCESS_KEY_ID" {
-  type = string
-  default = ""
-}
+#variable "AWS_ACCESS_KEY_ID" {
+# type = string
+#  default = ""
+#}
 
-variable "AWS_SECRET_ACCESS_KEY" {
-  type = string
-  default = ""
-}
+#variable "AWS_SECRET_ACCESS_KEY" {
+#  type = string
+#  default = ""
+#}

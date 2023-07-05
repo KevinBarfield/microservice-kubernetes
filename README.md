@@ -55,13 +55,18 @@ Kubernetes does the load balancing on the IP level.
 
 ### AWS
 
-1. AWS account
-2. AWS IAM user - Note this user will need some IAM permissions including roles, policies, OpenID
+### Install the AWS CLI and AWSexport credentials 
+[AWS CLI Install Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
-### Install the AWS CLI
+[AWS Export Credentials](https://github.com/benkehoe/aws-export-credentials)
 
-1. [Install](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-2. [Configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+### Login to AWS and set credientials
+#### Option 1 - Individual/Personal AWS Account
+1. Use your AWS account
+2. Create an AWS IAM user - Note this user will need some IAM permissions including roles, policies, OpenID
+
+### Configure the AWS CLI
+[AWS CLI configure Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
 
 ```
 % aws --version
@@ -76,6 +81,30 @@ aws-cli/2.11.5 Python/3.11.2 Darwin/22.3.0 exe/x86_64 prompt/off
     "Arn": "arn:aws:iam::378929636692:user/dockerbisson"
 }
 ```
+#### Option 2: AWS SSO with profile
+0. Setup (one time only)
+Make sure there are not credientials in the .aws/credientials file
+Configure the SSO session
+```
+aws sso configure
+```
+1. Clear prior AWS credentials from env:
+```
+for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SECURITY_TOKEN AWS_PROFILE export AWS_CREDENTIAL_EXPIRATION; do eval unset $var ; done
+```
+2. SSO Login with profile:
+```
+aws sso login --profile yourProfile
+```
+3. Export new credentials to env:
+```
+eval $(aws-export-credentials --profile yourProfile --env-export)
+```
+NOTE: SSO credentials have timed expirations.  To renew your credentials, first sign out then repeat steps above:
+```
+aws sso logout
+```
+
 
 ### Tools to install on new laptop
 1. Install brew: 
@@ -96,19 +125,25 @@ aws-cli/2.11.5 Python/3.11.2 Darwin/22.3.0 exe/x86_64 prompt/off
 From the top level of the repo
 
 1. `brew install terraform` (first time install only  )
+2. Set the AWS region in the `variables.tf` file 
 2. `terraform init`
 3. `terraform plan`
 4. `time terraform apply -auto-approve`
 
 ### kubectl config
 
-Get `kubectl` config ([more details](https://repost.aws/knowledge-center/eks-cluster-connection)):
-
+Set `kubectl` config ([more details](https://repost.aws/knowledge-center/eks-cluster-connection)):
+Note: Make sure the region matches and is one you can use.
+Individual Account:
 ```
-aws eks --region us-east-1 update-kubeconfig --name demo-eks
+aws eks --region us-east-1 update-kubeconfig --name demo-eks-tp
+```
+Profile Account:
+```
+aws --profile yourProfile eks update-kubeconfig --region us-east-1 --name demo-eks-tp
 ```
 
-The `region` and `name` values match those in the `main.tf` file.
+The `region` and `name` values match those in the `variables.tf` and `main.tf` files.
 
 ### Build the images
 1. Log in to your Docker Hub account by entering `docker login` on the command
@@ -119,14 +154,22 @@ export DOCKER_ACCOUNT=your account
 echo $DOCKER_ACCOUNT
 ```
 
-3. If you are running on x86, run `docker-build.sh` in the directory
-`microservice-kubernetes-demo`. It builds the images and uploads them to Docker Hub using your account.
+3. Building locally (and push for x86). Run `docker-build.sh` in the directory
+`microservice-kubernetes-demo`. It compiles the Java source and builds the images locally by default.  
+```
+./docker-build.sh 
+```
+If you use the "push" command, it will also upload them to Docker Hub using your account.
+```
+./docker-build.sh push
+```
 
-3a. If you are running on arm64 (apple silicon), you will need to compile locally then build images and push to hub using buildx.  Change to the directory `microservice-kubernetes-demo` and run `./mvnw clean
-package`.  Once the compile is done, run ` ./docker-buildx.sh`
-
+3a. If you are running on arm64 (apple silicon) and want to push x86 images, you will need to compile locally then push images to hub using buildx.  Change to the directory `microservice-kubernetes-demo` and run the following command.  NOTE: This does not build images locally, only remotely.
+```
+./docker-buildx.sh
+```
 ### Deploy to EKS
-Run `./kubernetes-deploy.sh` in the directory
+The `./kubernetes-deploy.sh` script will deploy the images located in your account on docker hub.  Run this in the directory
 `microservice-kubernetes-demo` :
 
 ```
@@ -145,7 +188,7 @@ Confirm the services are running using `kubectl`
 ```
 kubectl get all
 ```
-### Confirm the app is running in EKS (may take a minute or two for the app to be running)
+### Confirm the app is running in EKS (may take a minute or two for the app to be running).  Once it is running, use the command below to open a browser tab to the application
 
 ```
 open "http://$(kubectl get service -o json | jq -r '.items[0].status.loadBalancer.ingress[].hostname')"
@@ -159,7 +202,7 @@ open "http://$(kubectl get service -o json | jq -r '.items[0].status.loadBalance
 2. Install telepresence extension
 
 ### REQUIRED if you are going to demo the intercept spec method
-1. Update the kubernetes context in the apache-intercept.yaml and order-intercept.yaml files in the microservice-kubernetes directory - get it from kubectl
+1. Update the kubernetes context in the yaml file that you plan to use (apache-intercept.yaml, catalog-order-intercept.yaml, or order-intercept.yaml) files in the microservice-kubernetes directory - get it from kubectl
 ```
 kubectl config current-context
 ```
@@ -167,10 +210,17 @@ kubectl config current-context
 
 # Demo Execution
 
+## Sections
+### Front End Intercept
+### Back End Intercept (single service)
+### Back End Intercept (multiple services)
+
 ---
+## WARNING:
+I have seen intermittent errors when loading the telepresence sidecar traffic agents onto the kubernetes pods.  Once the sidecars are loaded, the intercepts seem to be stable.  
+I would HIGHLY recommend running the intercepts for each pod that you want to demo before the meeting to ensure the pods are working properly.  You can check this by looking at the pods through kubectl to ensure they are running, and by checking the demo app functionality
 
-
-## Front end demo
+## Front End Intercept
 Show the app running in EKS, show the homepage is missing the logo and has two links with the same name
 
 ### Update the index.html page to add the telepresence logo and change the link text for the second catalog link and build the image
@@ -230,6 +280,7 @@ Show the app running in EKS, show the homepage is missing the logo and has two l
 1. Go to the containers tab
 2. Show there is a `tp-apache` or `intercept-apache` container running
 3. Explain that the telepresence extension runs this container when the intercept starts based on the image you specify
+4. Also note there is another container running that is the telepresence daemon.
 
 ### Showing the intercept
 Option 1: HTTP headers
@@ -254,7 +305,7 @@ Option 2: Preview URL
 ---
 
 
-## Back End Demo
+## Back End Demo (Single Service)
 1. Show the app running in EKS, go to the orders page - there are no orders.
 2. Create an order, add a line with a quantity, and hit submit.
 3. Click list to see the order
@@ -272,7 +323,7 @@ Option 2: Preview URL
 ```
 4.  save the file
 5. cd up to the microservices-kubernetes-demo directory
-5. Run `./docker-build-order.sh` to recompile and build the image (local only)
+5. Run `./docker-build.sh` to recompile and build the image (local only)
 
 ## IMPORTANT - the Spec, GUI and CLI telepresence intercept options are separate.  You can do each of them, but you need to make sure the intercept is down before switching between them.
 
@@ -313,6 +364,7 @@ Note: you will get logging from the Java service, just scroll up to the telepres
 1. Go to the containers tab
 2. Show there is a `tp-order` container running
 3. Explain that the telepresence extension runs this container when the intercept starts based on the image you specify
+4. Also note there is another container running that is the telepresence daemon.
 
 ### Showing the intercept
 HTTP headers
@@ -334,15 +386,72 @@ HTTP headers
 ### (CLI) Stop the intercept
 1. type 'telepresence leave'
 
+## Back End Demo (Multiple Service - spec option only)
+1. Show the app running in EKS, go to the catalog page
+2. Show that the price field has no $ and only one decimal point
+3. Go to the orders page
+4. If there are no orders then create an order, add a line with a quantity, and hit submit
+5. Click list to see the order
+6. Show that the price field has no $ and only one decimal point
+
+### Update the Java code to fix the error and build the image
+1. Go to the microservice-kubernetes-demo/microservice-kubernetes-demo-catalog/src/main/resources/templates directory
+2. Open the itemlist.html file
+3. Update the line for item price to use the numbers currency format (shown below)
+```
+					<td th:text="${#numbers.formatCurrency(item.price)}">42.0</td>
+```
+4.  save the file
+5. Go to the microservice-kubernetes-demo/microservice-kubernetes-demo-order/src/main/resources/templates directory
+6. Open the orderlist.html file
+7. Update the line for item price to use the numbers currency format (shown below)
+```
+		<td th:text="${#numbers.formatCurrency(order.totalPrice(@catalogClient))}">42.0</td>
+```
+8.  save the file
+
+### Docker desktop and telepresence create intercept
+
+1. Open Docker Desktop
+2. Go to the telepresence extension
+3. Select "Get Started" - the Select Cluster for Telepresence Connection Dialog will appear
+4. The kubeconfig context should show the aws cluster
+5. Select "Install telepresence on this cluster" only if this is the first connection since building the cluster
+6. Select the down arrow next to the connect button, upload intercept spec should display
+7. Select the intercept-catalog-order.yaml file in the microservice-kubernetes folder
+8. Telepresence will start the intercept with the images specified in the intercept file
+
+### Show the container running(optional)
+1. Go to the containers tab
+2. Show there is both a `tp-catalog` and a `tp-order` container running
+3. Explain that the telepresence extension runs both these containers when the intercept starts based on the image you specify
+4. Also note there is another container running that is the telepresence daemon.
+
+### Showing the intercept
+HTTP headers
+1. Copy the request header string shown in the current running intercepts (or on the terminal page)
+2. Put the `x-intercept-id` in the name field in mod header
+3. Put the rest (minus the colon after id) into the value field and make sure the green check is there
+4. Go to the catalog list - show the prices are now formatted properly
+5. Go to the order list - see there are no orders now because the order service has no permament storage
+5. Create an order, add a line with a quantity, and hit submit.
+6. Click list to see the order
+7. Show the prices are now formatted properly
+8. Turn off header and show both prices are back to being incorrectly formatted
+
+### (GUI) Stop the intercept
+1. Click stop intercept
+2. (optional) show the local container has stopped as well
 
 # Demo cleanup
 
 ### Change the app back
 
-1. cd to the apache directory
-2. Update the index.html file - remove the image link, change the catalog link back and save
-3. cd to the microservice-kubernetes-demo/microservice-kubernetes-demo-order/src/main/java/com/ewolff/microservice/order/logic directory
-2. Update the OrderController.java file - change the POST back to DELETE on the delete method (make sure you get the right one)
+Either revert the changes manually, or use git (warning this will remove any config changes you have made in the app as well as the code changes)
+```
+git reset –hard
+git clean -fxd
+```
 
 ### Remove the deployed services
 1. cd to the microservices-kubernetes-demo directory

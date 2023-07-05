@@ -3,14 +3,14 @@
 
 terraform {
 
-  cloud {
-
-    organization = "dockerdemo"
-
-    workspaces {
-      name = "demo-eks"
-    }
-  }
+#  cloud {
+#
+#    organization = "dockerdemo"
+#
+#    workspaces {
+#      name = "demo-eks-tp"
+#    }
+#  }
 
   required_providers {
     aws = {

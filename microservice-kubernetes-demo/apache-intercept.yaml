@@ -1,5 +1,5 @@
 connection:
-  context: "arn:aws:eks:us-east-1:859382181073:cluster/demo-eks"
+  context: "arn:aws:eks:us-east-2:859382181073:cluster/demo-eks"
   mappedNamespaces:
     - "default"
 workloads:
@@ -8,7 +8,7 @@ workloads:
     intercepts:
       # You can define one or more intercept(s)
       - headers: 
-        - name: x-telepresence-intercept-id
+        - name: x-intercept-id
           value: ordertrackapache1
         localPort: 80
         port: 80

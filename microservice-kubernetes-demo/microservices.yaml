@@ -50,7 +50,7 @@ spec:
       - image: docker.io/ewolff/microservice-kubernetes-demo-catalog:latest
         name: catalog
         ports:
-        - containerPort: 8080
+        - containerPort: 8081
         resources: {}
 status: {}
 
@@ -143,9 +143,9 @@ metadata:
   name: catalog
 spec:
   ports:
-  - port: 8080
+  - port: 8081
     protocol: TCP
-    targetPort: 8080
+    targetPort: 8081
   selector:
     run: catalog
   type: LoadBalancer
